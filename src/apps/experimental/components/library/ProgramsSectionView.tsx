@@ -3,8 +3,7 @@ import { useGetProgramsSectionsWithItems, useGetTimers } from 'hooks/useFetchIte
 import { appRouter } from 'components/router/appRouter';
 import globalize from 'lib/globalize';
 import Loading from 'components/loading/LoadingComponent';
-import NoItemsMessage from 'components/common/NoItemsMessage';
-import SectionContainer from 'components/common/SectionContainer';
+import SectionContainer from './SectionContainer';
 import { CardShape } from 'utils/card';
 import type { ParentId } from 'types/library';
 import type { Section, SectionType } from 'types/sections';
@@ -31,7 +30,14 @@ const ProgramsSectionView: FC<ProgramsSectionViewProps> = ({
     }
 
     if (!sectionsWithItems?.length && !upcomingRecordings?.length) {
-        return <NoItemsMessage />;
+        return (
+            <div className='noItemsMessage centerMessage'>
+                <h1>{globalize.translate('MessageNothingHere')}</h1>
+                <p>
+                    {globalize.translate('MessageNoItemsAvailable')}
+                </p>
+            </div>
+        );
     }
 
     const getRouteUrl = (section: Section) => {
@@ -52,33 +58,23 @@ const ProgramsSectionView: FC<ProgramsSectionViewProps> = ({
             {sectionsWithItems?.map(({ section, items }) => (
                 <SectionContainer
                     key={section.type}
-                    sectionHeaderProps={{
-                        title: globalize.translate(section.name),
-                        url: getRouteUrl(section)
-                    }}
-                    itemsContainerProps={{
-                        queryKey: ['ProgramSectionWithItems'],
-                        reloadItems: refetch
-                    }}
-                    items={items}
+                    sectionTitle={globalize.translate(section.name)}
+                    items={items ?? []}
+                    url={getRouteUrl(section)}
+                    reloadItems={refetch}
                     cardOptions={{
                         ...section.cardOptions,
                         queryKey: ['ProgramSectionWithItems']
                     }}
                 />
+
             ))}
 
             {upcomingRecordings?.map((group) => (
                 <SectionContainer
                     key={group.name}
-                    sectionHeaderProps={{
-                        title: group.name
-                    }}
-                    itemsContainerProps={{
-                        queryKey: ['Timers'],
-                        reloadItems: refetch
-                    }}
-                    items={group.timerInfo}
+                    sectionTitle={group.name}
+                    items={group.timerInfo ?? []}
                     cardOptions={{
                         queryKey: ['Timers'],
                         shape: CardShape.BackdropOverflow,

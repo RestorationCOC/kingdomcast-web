@@ -290,16 +290,22 @@ export class PdfPlayer {
     }
 
     renderPage(canvas, number) {
-        const devicePixelRatio = window.devicePixelRatio || 1;
         this.book.getPage(number).then(page => {
-            const original = page.getViewport({ scale: 1 });
-            const scale = Math.max((window.screen.height / original.height), (window.screen.width / original.width)) * devicePixelRatio;
+            const width = dom.getWindowSize().innerWidth;
+            const height = dom.getWindowSize().innerHeight;
+            const scale = Math.ceil(window.devicePixelRatio || 1);
             const viewport = page.getViewport({ scale });
-
+            const context = canvas.getContext('2d');
             canvas.width = viewport.width;
             canvas.height = viewport.height;
 
-            const context = canvas.getContext('2d');
+            if (width < height) {
+                canvas.style.width = '100%';
+                canvas.style.height = 'auto';
+            } else {
+                canvas.style.height = '100%';
+                canvas.style.width = 'auto';
+            }
 
             const renderContext = {
                 canvasContext: context,

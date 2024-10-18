@@ -493,10 +493,6 @@ export default function () {
 
     function loadPlaylist(context, player) {
         getPlaylistItems(player).then(function (items) {
-            if (items.length === 0) {
-                return;
-            }
-
             let html = '';
             let favoritesEnabled = true;
             if (layoutManager.mobile) {

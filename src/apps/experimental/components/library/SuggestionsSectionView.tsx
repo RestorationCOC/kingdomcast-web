@@ -8,8 +8,7 @@ import {
 import { appRouter } from 'components/router/appRouter';
 import globalize from 'lib/globalize';
 import Loading from 'components/loading/LoadingComponent';
-import NoItemsMessage from 'components/common/NoItemsMessage';
-import SectionContainer from '../../../../components/common/SectionContainer';
+import SectionContainer from './SectionContainer';
 import { CardShape } from 'utils/card';
 import type { ParentId } from 'types/library';
 import type { Section, SectionType } from 'types/sections';
@@ -39,7 +38,12 @@ const SuggestionsSectionView: FC<SuggestionsSectionViewProps> = ({
     }
 
     if (!sectionsWithItems?.length && !movieRecommendationsItems?.length) {
-        return <NoItemsMessage />;
+        return (
+            <div className='noItemsMessage centerMessage'>
+                <h1>{globalize.translate('MessageNothingHere')}</h1>
+                <p>{globalize.translate('MessageNoItemsAvailable')}</p>
+            </div>
+        );
     }
 
     const getRouteUrl = (section: Section) => {
@@ -92,14 +96,9 @@ const SuggestionsSectionView: FC<SuggestionsSectionViewProps> = ({
             {sectionsWithItems?.map(({ section, items }) => (
                 <SectionContainer
                     key={section.type}
-                    sectionHeaderProps={{
-                        title: globalize.translate(section.name),
-                        url: getRouteUrl(section)
-                    }}
-                    itemsContainerProps={{
-                        queryKey: ['SuggestionSectionWithItems']
-                    }}
-                    items={items}
+                    sectionTitle={globalize.translate(section.name)}
+                    items={items ?? []}
+                    url={getRouteUrl(section)}
                     cardOptions={{
                         ...section.cardOptions,
                         queryKey: ['SuggestionSectionWithItems'],
@@ -115,13 +114,8 @@ const SuggestionsSectionView: FC<SuggestionsSectionViewProps> = ({
                 <SectionContainer
                     // eslint-disable-next-line react/no-array-index-key
                     key={`${recommendation.CategoryId}-${index}`} // use a unique id return value may have duplicate id
-                    sectionHeaderProps={{
-                        title: getRecommendationTittle(recommendation)
-                    }}
-                    itemsContainerProps={{
-                        queryKey: ['MovieRecommendations']
-                    }}
-                    items={recommendation.Items as ItemDto[]}
+                    sectionTitle={getRecommendationTittle(recommendation)}
+                    items={(recommendation.Items as ItemDto[]) ?? []}
                     cardOptions={{
                         queryKey: ['MovieRecommendations'],
                         shape: CardShape.PortraitOverflow,

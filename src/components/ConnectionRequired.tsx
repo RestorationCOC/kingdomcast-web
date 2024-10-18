@@ -149,22 +149,19 @@ const ConnectionRequired: FunctionComponent<ConnectionRequiredProps> = ({
 
     useEffect(() => {
         // Check connection status on initial page load
-        const apiClient = ServerConnections.currentApiClient();
-        const firstConnection = ServerConnections.firstConnection;
-        console.debug('[ConnectionRequired] connection state', firstConnection?.State);
-        ServerConnections.firstConnection = null;
+        ServerConnections.connect()
+            .then(firstConnection => {
+                console.debug('[ConnectionRequired] connection state', firstConnection?.State);
 
-        if (firstConnection && firstConnection.State !== ConnectionState.SignedIn && !apiClient?.isLoggedIn()) {
-            handleIncompleteWizard(firstConnection)
-                .catch(err => {
-                    console.error('[ConnectionRequired] could not start wizard', err);
-                });
-        } else {
-            validateUserAccess()
-                .catch(err => {
-                    console.error('[ConnectionRequired] could not validate user access', err);
-                });
-        }
+                if (firstConnection && firstConnection.State !== ConnectionState.SignedIn) {
+                    return handleIncompleteWizard(firstConnection);
+                } else {
+                    return validateUserAccess();
+                }
+            })
+            .catch(err => {
+                console.error('[ConnectionRequired] failed to connect to server', err);
+            });
     }, [handleIncompleteWizard, validateUserAccess]);
 
     if (isLoading) {

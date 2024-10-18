@@ -2,7 +2,7 @@ import type { BaseItemKind } from '@jellyfin/sdk/lib/generated-client/models/bas
 import type { CollectionType } from '@jellyfin/sdk/lib/generated-client/models/collection-type';
 import React, { FC } from 'react';
 import { useGetGenres } from 'hooks/useFetchItems';
-import NoItemsMessage from 'components/common/NoItemsMessage';
+import globalize from 'lib/globalize';
 import Loading from 'components/loading/LoadingComponent';
 import GenresSectionContainer from './GenresSectionContainer';
 import type { ParentId } from 'types/library';
@@ -25,18 +25,27 @@ const GenresItemsContainer: FC<GenresItemsContainerProps> = ({
     }
 
     if (!genresResult?.Items?.length) {
-        return <NoItemsMessage message='MessageNoGenresAvailable' />;
+        return (
+            <div className='noItemsMessage centerMessage'>
+                <h1>{globalize.translate('MessageNothingHere')}</h1>
+                <p>{globalize.translate('MessageNoGenresAvailable')}</p>
+            </div>
+        );
     }
 
-    return genresResult.Items.map((genre) => (
-        <GenresSectionContainer
-            key={genre.Id}
-            collectionType={collectionType}
-            parentId={parentId}
-            itemType={itemType}
-            genre={genre}
-        />
-    ));
+    return (
+        <>
+            {genresResult.Items.map((genre) => (
+                <GenresSectionContainer
+                    key={genre.Id}
+                    collectionType={collectionType}
+                    parentId={parentId}
+                    itemType={itemType}
+                    genre={genre}
+                />
+            ))}
+        </>
+    );
 };
 
 export default GenresItemsContainer;

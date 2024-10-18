@@ -181,7 +181,7 @@ const ItemsView: FC<ItemsViewProps> = ({
 
     const getItems = useCallback(() => {
         if (!itemsResult?.Items?.length) {
-            return <NoItemsMessage message={noItemsMessage} />;
+            return <NoItemsMessage noItemsMessage={noItemsMessage} />;
         }
 
         if (libraryViewSettings.ViewMode === ViewMode.ListView) {

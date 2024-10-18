@@ -91,7 +91,7 @@ export class UserSettings {
      * Get value of setting.
      * @param {string} name - Name of setting.
      * @param {boolean} [enableOnServer] - Flag to return preferences from server (cached).
-     * @return {string | null} Value of setting.
+     * @return {string} Value of setting.
      */
     get(name, enableOnServer) {
         const userId = this.currentUserId;
@@ -432,19 +432,6 @@ export class UserSettings {
     }
 
     /**
-     * Get or set the amount of time it takes to activate the screensaver in seconds. Default 3 minutes.
-     * @param {number|undefined} [val] - The amount of time it takes to activate the screensaver in seconds.
-     * @return {number} The amount of time it takes to activate the screensaver in seconds.
-     */
-    screensaverTime(val) {
-        if (val !== undefined) {
-            return this.set('screensaverTime', val.toString(), false);
-        }
-
-        return parseInt(this.get('screensaverTime', false), 10) || 180;
-    }
-
-    /**
      * Get or set library page size.
      * @param {number|undefined} [val] - Library page size.
      * @return {number} Library page size.
@@ -663,7 +650,6 @@ export const skin = currentSettings.skin.bind(currentSettings);
 export const theme = currentSettings.theme.bind(currentSettings);
 export const screensaver = currentSettings.screensaver.bind(currentSettings);
 export const backdropScreensaverInterval = currentSettings.backdropScreensaverInterval.bind(currentSettings);
-export const screensaverTime = currentSettings.screensaverTime.bind(currentSettings);
 export const libraryPageSize = currentSettings.libraryPageSize.bind(currentSettings);
 export const maxDaysForNextUp = currentSettings.maxDaysForNextUp.bind(currentSettings);
 export const enableRewatchingInNextUp = currentSettings.enableRewatchingInNextUp.bind(currentSettings);

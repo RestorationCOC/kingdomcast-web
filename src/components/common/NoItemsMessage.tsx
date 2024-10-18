@@ -4,19 +4,19 @@ import Typography from '@mui/material/Typography';
 import globalize from 'lib/globalize';
 
 interface NoItemsMessageProps {
-    message?: string;
+    noItemsMessage?: string;
 }
 
 const NoItemsMessage: FC<NoItemsMessageProps> = ({
-    message = 'MessageNoItemsAvailable'
+    noItemsMessage = 'MessageNoItemsAvailable'
 }) => {
     return (
         <Box className='noItemsMessage centerMessage'>
-            <Typography variant='h1'>
+            <Typography variant='h2'>
                 {globalize.translate('MessageNothingHere')}
             </Typography>
-            <Typography paragraph>
-                {globalize.translate(message)}
+            <Typography paragraph variant='h2'>
+                {globalize.translate(noItemsMessage)}
             </Typography>
         </Box>
     );

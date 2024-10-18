@@ -2,7 +2,6 @@ import { BaseItemKind } from '@jellyfin/sdk/lib/generated-client/models/base-ite
 import { ItemSortBy } from '@jellyfin/sdk/lib/generated-client/models/item-sort-by';
 import { getItemsApi } from '@jellyfin/sdk/lib/utils/api/items-api';
 import { getPlaylistsApi } from '@jellyfin/sdk/lib/utils/api/playlists-api';
-import { getUserLibraryApi } from '@jellyfin/sdk/lib/utils/api/user-library-api';
 import escapeHtml from 'escape-html';
 
 import toast from 'components/toast/toast';
@@ -11,7 +10,6 @@ import globalize from 'lib/globalize';
 import { currentSettings as userSettings } from 'scripts/settings/userSettings';
 import { PluginType } from 'types/plugin';
 import { toApi } from 'utils/jellyfin-apiclient/compat';
-import { isBlank } from 'utils/string';
 
 import dialogHelper from '../dialogHelper/dialogHelper';
 import loading from '../loading/loading';
@@ -30,13 +28,11 @@ import 'material-design-icons-iconfont';
 import '../formdialog.scss';
 
 interface DialogElement extends HTMLDivElement {
-    playlistId?: string
     submitted?: boolean
 }
 
 interface PlaylistEditorOptions {
     items: string[],
-    id?: string,
     serverId: string,
     enableAddToPlayQueue?: boolean,
     defaultValue?: string
@@ -60,13 +56,6 @@ function onSubmit(this: HTMLElement, e: Event) {
                     toast(globalize.translate('PlaylistError.AddFailed'));
                 })
                 .finally(loading.hide);
-        } else if (panel.playlistId) {
-            updatePlaylist(panel)
-                .catch(err => {
-                    console.error('[PlaylistEditor] Failed to update to playlist %s', panel.playlistId, err);
-                    toast(globalize.translate('PlaylistError.UpdateFailed'));
-                })
-                .finally(loading.hide);
         } else {
             createPlaylist(panel)
                 .catch(err => {
@@ -84,9 +73,6 @@ function onSubmit(this: HTMLElement, e: Event) {
 }
 
 function createPlaylist(dlg: DialogElement) {
-    const name = dlg.querySelector<HTMLInputElement>('#txtNewPlaylistName')?.value;
-    if (isBlank(name)) return Promise.reject(new Error('Playlist name should not be blank'));
-
     const apiClient = ServerConnections.getApiClient(currentServerId);
     const api = toApi(apiClient);
 
@@ -95,7 +81,7 @@ function createPlaylist(dlg: DialogElement) {
     return getPlaylistsApi(api)
         .createPlaylist({
             createPlaylistDto: {
-                Name: name,
+                Name: dlg.querySelector<HTMLInputElement>('#txtNewPlaylistName')?.value,
                 IsPublic: dlg.querySelector<HTMLInputElement>('#chkPlaylistPublic')?.checked,
                 Ids: itemIds?.split(','),
                 UserId: apiClient.getCurrentUserId()
@@ -111,29 +97,6 @@ function createPlaylist(dlg: DialogElement) {
 
 function redirectToPlaylist(id: string | undefined) {
     appRouter.showItem(id, currentServerId);
-}
-
-function updatePlaylist(dlg: DialogElement) {
-    if (!dlg.playlistId) return Promise.reject(new Error('Missing playlist ID'));
-
-    const name = dlg.querySelector<HTMLInputElement>('#txtNewPlaylistName')?.value;
-    if (isBlank(name)) return Promise.reject(new Error('Playlist name should not be blank'));
-
-    const apiClient = ServerConnections.getApiClient(currentServerId);
-    const api = toApi(apiClient);
-
-    return getPlaylistsApi(api)
-        .updatePlaylist({
-            playlistId: dlg.playlistId,
-            updatePlaylistDto: {
-                Name: name,
-                IsPublic: dlg.querySelector<HTMLInputElement>('#chkPlaylistPublic')?.checked
-            }
-        })
-        .then(() => {
-            dlg.submitted = true;
-            dialogHelper.close(dlg);
-        });
 }
 
 function addToPlaylist(dlg: DialogElement, id: string) {
@@ -247,7 +210,7 @@ function populatePlaylists(editorOptions: PlaylistEditorOptions, panel: DialogEl
         });
 }
 
-function getEditorHtml(items: string[], options: PlaylistEditorOptions) {
+function getEditorHtml(items: string[]) {
     let html = '';
 
     html += '<div class="formDialogContent smoothScrollY" style="padding-top:2em;">';
@@ -269,7 +232,7 @@ function getEditorHtml(items: string[], options: PlaylistEditorOptions) {
     html += `
     <div class="checkboxContainer checkboxContainer-withDescription">
         <label>
-            <input type="checkbox" is="emby-checkbox" id="chkPlaylistPublic" />
+            <input type="checkbox" is="emby-checkbox" id="chkPlaylistPublic" checked />
             <span>${globalize.translate('PlaylistPublic')}</span>
         </label>
         <div class="fieldDescription checkboxFieldDescription">
@@ -281,7 +244,7 @@ function getEditorHtml(items: string[], options: PlaylistEditorOptions) {
     html += '</div>';
 
     html += '<div class="formDialogFooter">';
-    html += `<button is="emby-button" type="submit" class="raised btnSubmit block formDialogFooterItem button-submit">${options.id ? globalize.translate('Save') : globalize.translate('Add')}</button>`;
+    html += `<button is="emby-button" type="submit" class="raised btnSubmit block formDialogFooterItem button-submit">${globalize.translate('Add')}</button>`;
     html += '</div>';
 
     html += '<input type="hidden" class="fldSelectedItemIds" />';
@@ -318,34 +281,6 @@ function initEditor(content: DialogElement, options: PlaylistEditorOptions, item
                 console.error('[PlaylistEditor] failed to populate playlists', err);
             })
             .finally(loading.hide);
-    } else if (options.id) {
-        content.querySelector('.fldSelectPlaylist')?.classList.add('hide');
-        const panel = dom.parentWithClass(content, 'dialog') as DialogElement | null;
-        if (!panel) {
-            console.error('[PlaylistEditor] could not find dialog element');
-            return;
-        }
-
-        const apiClient = ServerConnections.getApiClient(currentServerId);
-        const api = toApi(apiClient);
-        Promise.all([
-            getUserLibraryApi(api)
-                .getItem({ itemId: options.id }),
-            getPlaylistsApi(api)
-                .getPlaylist({ playlistId: options.id })
-        ])
-            .then(([ { data: playlistItem }, { data: playlist } ]) => {
-                panel.playlistId = options.id;
-
-                const nameField = panel.querySelector<HTMLInputElement>('#txtNewPlaylistName');
-                if (nameField) nameField.value = playlistItem.Name || '';
-
-                const publicField = panel.querySelector<HTMLInputElement>('#chkPlaylistPublic');
-                if (publicField) publicField.checked = !!playlist.OpenAccess;
-            })
-            .catch(err => {
-                console.error('[playlistEditor] failed to get playlist details', err);
-            });
     } else {
         content.querySelector('.fldSelectPlaylist')?.classList.add('hide');
 
@@ -390,21 +325,17 @@ export class PlaylistEditor {
         dlg.classList.add('formDialog');
 
         let html = '';
+        const title = globalize.translate('HeaderAddToPlaylist');
+
         html += '<div class="formDialogHeader">';
         html += `<button is="paper-icon-button-light" class="btnCancel autoSize" tabindex="-1" title="${globalize.translate('ButtonBack')}"><span class="material-icons arrow_back" aria-hidden="true"></span></button>`;
         html += '<h3 class="formDialogHeaderTitle">';
-        if (items.length) {
-            html += globalize.translate('HeaderAddToPlaylist');
-        } else if (options.id) {
-            html += globalize.translate('HeaderEditPlaylist');
-        } else {
-            html += globalize.translate('HeaderNewPlaylist');
-        }
+        html += title;
         html += '</h3>';
 
         html += '</div>';
 
-        html += getEditorHtml(items, options);
+        html += getEditorHtml(items);
 
         dlg.innerHTML = html;
 
